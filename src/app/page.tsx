@@ -2,6 +2,10 @@ import Image from "next/image";
 
 export default function Home() {
   return (
-    <a href="">The Beauty LOSFT</a>
+    <main className="min-h-screen">
+      <div>
+        <a href="">The Beauty LOFT</a>
+      </div>
+    </main>
   );
 }
