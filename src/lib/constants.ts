@@ -1,6 +1,6 @@
 export const navItems = [
-    {name:'Inicio',href:'#'},
-    {name:'Contact',href:'#'},
-    {name:'Servicios',href:'#'},
-    {name:'Acerca',href:'#'}
+    {name:'Inicio',href:'/'},
+    {name:'Contacto',href:'/contacto'},
+    {name:'Servicios',href:'/servicios'},
+    {name:'Acerca',href:'/acerca'}
 ]
