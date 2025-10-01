@@ -30,9 +30,11 @@ export default function header() {
           </div>
 
           {/*Boton*/}
+          <Link href='/agendarCita'>
           <div className="hidden md:flex items-center space-x-4">
               <Button className="font-semibold">Agendar Cita</Button>
           </div>
+          </Link>
         </div>
       </div>
     </nav>
