@@ -29,7 +29,7 @@ export default function ContactoPage() {
           </h1>
           
           <h2 className={`${cormorantGaramond.className} text-4xl md:text-6xl font-normal text-gray-700 text-center mb-12`}>
-            Contacto
+            Servicio al cliente
           </h2>
 
           {/* Formulario de contacto */}
