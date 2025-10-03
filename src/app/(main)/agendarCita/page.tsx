@@ -111,7 +111,28 @@ export default function BookingPage() {
       alert("Por favor corrige los errores antes de enviar.");
       return;
     }
-    alert("Cita agendada exitosamente ✅");
+    // Enviar los datos a la API
+    fetch("/api/citas", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...form,
+        fecha: form.fecha,
+      }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (data.ok) {
+          alert("Cita agendada exitosamente ✅");
+        } else {
+          alert("Error al agendar cita: " + (data.error || "Error desconocido"));
+        }
+      })
+      .catch(() => {
+        alert("Error de red al agendar cita");
+      });
   };
 
   return (

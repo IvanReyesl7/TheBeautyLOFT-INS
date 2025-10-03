@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import { Inter, Cormorant_Garamond } from "next/font/google";
 import HeroCarrusel from "@/components/layout/carrusel";
@@ -18,6 +19,19 @@ const cormorantGaramond = Cormorant_Garamond({
 });
 
 export default function ContactoPage() {
+  // ...existing code...
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Leer la primera cita de la base de datos
+    const res = await fetch("/api/citas/first");
+    const data = await res.json();
+    if (data.ok && data.cita) {
+      alert(`Primera cita:\nNombre: ${data.cita.nombre}\nApellido: ${data.cita.apellido}\nCorreo: ${data.cita.correo}\nTeléfono: ${data.cita.telefono}\nServicio: ${data.cita.servicio}\nFecha: ${data.cita.fecha}\nHora: ${data.cita.hora}`);
+    } else {
+      alert("No se pudo leer la primera cita");
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Sección de contacto */}
@@ -34,7 +48,7 @@ export default function ContactoPage() {
 
           {/* Formulario de contacto */}
           <div className="max-w-2xl mx-auto">
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Input Nombre Completo */}
               <div className="space-y-2">
                 <Label htmlFor="nombre" className="text-sm font-medium text-gray-700">
