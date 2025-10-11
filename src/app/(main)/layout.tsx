@@ -1,6 +1,6 @@
+// app/(main)/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
 import Header from "@/components/layout/header";
 
 const geistSans = Geist({
@@ -18,21 +18,17 @@ export const metadata: Metadata = {
   description: "Tu Salon de belleza de confianza",
 };
 
-export default function RootLayout({
+export default function MainLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-
-        <main className="">
-          {children}
-        </main>
-      </body>
-    </html>
+    <>
+      <Header />
+      <main className="min-h-screen">
+        {children}
+      </main>
+    </>
   );
 }
