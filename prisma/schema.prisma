@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  email     String   @unique
+  password  String
+  rol       String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  apellido  String?
+  telefono  String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  citas     Cita[]
+}
+
+model Servicio {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  precio      Decimal  @db.Decimal(10, 2)
+  duracion    Int      // Duración en minutos
+  imagenUrl   String?  // URL manual de la imagen
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  citas       CitaServicio[]
+}
+
+model Cita {
+  id         Int            @id @default(autoincrement())
+  clienteId  Int
+  cliente    Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  fechaHora  DateTime
+  estado     EstadoCita     @default(PENDIENTE)
+  notas      String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  servicios  CitaServicio[]
+
+  @@index([clienteId])
+  @@index([fechaHora])
+}
+
+model CitaServicio {
+  id         Int      @id @default(autoincrement())
+  citaId     Int
+  servicioId Int
+  cita       Cita     @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  servicio   Servicio @relation(fields: [servicioId], references: [id])
+  
+  @@unique([citaId, servicioId])
+  @@index([citaId])
+  @@index([servicioId])
+}
+
+enum EstadoCita {
+  PENDIENTE
+  CONFIRMADA
+  COMPLETADA
+  CANCELADA
+}

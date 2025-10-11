@@ -16,7 +16,40 @@ const cormorantGaramond = Cormorant_Garamond({
   weight: ["400"],
 });
 
+interface Servicio {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  precio: number;
+  duracion: number;
+  imagenUrl: string | null;
+  activo: boolean;
+}
+
 export default function BookingPage() {
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchServicios() {
+      try {
+        const response = await fetch("/api/servicios");
+
+        if (!response.ok) {
+          throw new Error("Error al cargar servicios");
+        }
+        const data = await response.json();
+        setServicios(data);
+      } catch (err) {
+        console.log("Error", err);
+        setError("No se pudo cargar los servicios");
+        setLoading(true);
+      }
+    }
+    fetchServicios();
+  }, []);
+
   const today = startOfToday();
   const nextMonth = addMonths(today, 1);
 
@@ -40,14 +73,6 @@ export default function BookingPage() {
     hora: "",
   });
 
-  const services = [
-    { id: "corte", nombre: "Corte de cabello + peinado" },
-    { id: "manicure", nombre: "Manicure & Pedicure" },
-    { id: "facial", nombre: "Tratamiento facial hidratante" },
-    { id: "spa", nombre: "Spa relajante con aromaterapia" },
-    { id: "maquillaje", nombre: "Maquillaje para eventos" },
-  ];
-
   const hours = Array.from({ length: 6 }, (_, i) => {
     const h = 7 + i;
     return h.toString().padStart(2, "0") + ":00";
@@ -63,7 +88,9 @@ export default function BookingPage() {
         break;
       case "correo":
         if (
-          !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value as string)
+          !/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(
+            value as string
+          )
         ) {
           return "Correo electrónico inválido.";
         }
@@ -105,26 +132,99 @@ export default function BookingPage() {
     Object.values(errors).every((e) => e === "") &&
     Object.values(form).every((f) => f !== "" && f !== null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isFormValid()) {
-      alert("Por favor corrige los errores antes de enviar.");
-      return;
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!isFormValid()) {
+    alert("Por favor corrige los errores antes de enviar.");
+    return;
+  }
+
+
+  const servicioSeleccionado = servicios.find(s => s.nombre === form.servicio);
+  
+  if (!servicioSeleccionado) {
+    alert("Servicio no válido");
+    return;
+  }
+
+  try {
+    
+    const [horas, minutos] = form.hora.split(':').map(Number);
+    const fechaHora = new Date(form.fecha);
+    fechaHora.setHours(horas, minutos, 0, 0);
+
+    
+    const citaData = {
+      nombre: form.nombre,
+      apellido: form.apellido,
+      email: form.correo,
+      telefono: form.telefono,
+      servicioId: servicioSeleccionado.id,
+      fechaHora: fechaHora.toISOString(),
+      estado: 'PENDIENTE'
+    };
+
+    console.log('Enviando datos:', citaData);
+
+    
+    const response = await fetch('/api/citas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(citaData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al agendar cita');
     }
-    alert("Cita agendada exitosamente ✅");
-  };
+
+    const data = await response.json();
+    console.log('Cita creada:', data);
+
+    alert("¡Cita agendada exitosamente! ✅");
+    
+    
+    setForm({
+      nombre: "",
+      apellido: "",
+      correo: "",
+      telefono: "",
+      servicio: "",
+      fecha: today,
+      hora: "07:00",
+    });
+
+  } catch (error: any) {
+    console.error('Error:', error);
+    alert(`Error al agendar la cita: ${error.message}`);
+  }
+};
+
+  const servicioSeleccionado = servicios.find(
+    (s) => s.nombre === form.servicio
+  );
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-24 px-6">
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-        <h1 className={`${inter.className} text-3xl font-extrabold text-black mb-6 text-center`}>
+        <h1
+          className={`${inter.className} text-3xl font-extrabold text-black mb-6 text-center`}
+        >
           Agenda tu cita
         </h1>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           {/* Nombre */}
           <div>
-            <label className="block font-medium mb-1 text-gray-700">Nombre</label>
+            <label className="block font-medium mb-1 text-gray-700">
+              Nombre
+            </label>
             <input
               type="text"
               name="nombre"
@@ -135,12 +235,16 @@ export default function BookingPage() {
                 errors.nombre ? "ring-2 ring-red-500" : "focus:ring-gray-400"
               }`}
             />
-            {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+            {errors.nombre && (
+              <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>
+            )}
           </div>
 
           {/* Apellido */}
           <div>
-            <label className="block font-medium mb-1 text-gray-700">Apellido</label>
+            <label className="block font-medium mb-1 text-gray-700">
+              Apellido
+            </label>
             <input
               type="text"
               name="apellido"
@@ -151,12 +255,16 @@ export default function BookingPage() {
                 errors.apellido ? "ring-2 ring-red-500" : "focus:ring-gray-400"
               }`}
             />
-            {errors.apellido && <p className="text-red-500 text-sm mt-1">{errors.apellido}</p>}
+            {errors.apellido && (
+              <p className="text-red-500 text-sm mt-1">{errors.apellido}</p>
+            )}
           </div>
 
           {/* Correo */}
           <div>
-            <label className="block font-medium mb-1 text-gray-700">Correo electrónico</label>
+            <label className="block font-medium mb-1 text-gray-700">
+              Correo electrónico
+            </label>
             <input
               type="email"
               name="correo"
@@ -167,12 +275,16 @@ export default function BookingPage() {
                 errors.correo ? "ring-2 ring-red-500" : "focus:ring-gray-400"
               }`}
             />
-            {errors.correo && <p className="text-red-500 text-sm mt-1">{errors.correo}</p>}
+            {errors.correo && (
+              <p className="text-red-500 text-sm mt-1">{errors.correo}</p>
+            )}
           </div>
 
           {/* Teléfono */}
           <div>
-            <label className="block font-medium mb-1 text-gray-700">Teléfono</label>
+            <label className="block font-medium mb-1 text-gray-700">
+              Teléfono
+            </label>
             <input
               type="tel"
               name="telefono"
@@ -183,12 +295,16 @@ export default function BookingPage() {
                 errors.telefono ? "ring-2 ring-red-500" : "focus:ring-gray-400"
               }`}
             />
-            {errors.telefono && <p className="text-red-500 text-sm mt-1">{errors.telefono}</p>}
+            {errors.telefono && (
+              <p className="text-red-500 text-sm mt-1">{errors.telefono}</p>
+            )}
           </div>
 
           {/* Servicio */}
           <div>
-            <label className="block font-medium mb-1 text-gray-700">Servicio</label>
+            <label className="block font-medium mb-1 text-gray-700">
+              Servicio
+            </label>
             <select
               name="servicio"
               value={form.servicio}
@@ -199,13 +315,15 @@ export default function BookingPage() {
               }`}
             >
               <option value="">Seleccione un servicio</option>
-              {services.map((s) => (
+              {servicios.map((s) => (
                 <option key={s.id} value={s.nombre}>
                   {s.nombre}
                 </option>
               ))}
             </select>
-            {errors.servicio && <p className="text-red-500 text-sm mt-1">{errors.servicio}</p>}
+            {errors.servicio && (
+              <p className="text-red-500 text-sm mt-1">{errors.servicio}</p>
+            )}
           </div>
 
           {/* Hora */}
@@ -226,12 +344,16 @@ export default function BookingPage() {
                 </option>
               ))}
             </select>
-            {errors.hora && <p className="text-red-500 text-sm mt-1">{errors.hora}</p>}
+            {errors.hora && (
+              <p className="text-red-500 text-sm mt-1">{errors.hora}</p>
+            )}
           </div>
 
           {/* Calendario */}
           <div className="md:col-span-2">
-            <label className="block font-medium mb-2 text-gray-700">Fecha</label>
+            <label className="block font-medium mb-2 text-gray-700">
+              Fecha
+            </label>
             <DayPicker
               mode="single"
               selected={form.fecha}
@@ -242,7 +364,9 @@ export default function BookingPage() {
                 day_selected: { backgroundColor: "#000000", color: "white" },
               }}
             />
-            {errors.fecha && <p className="text-red-500 text-sm mt-1">{errors.fecha}</p>}
+            {errors.fecha && (
+              <p className="text-red-500 text-sm mt-1">{errors.fecha}</p>
+            )}
           </div>
 
           {/* Vista previa */}
@@ -253,23 +377,34 @@ export default function BookingPage() {
               </h2>
               <div className="space-y-2 text-gray-800">
                 <p>
-                  <span className="font-semibold text-black">Nombre:</span> {form.nombre} {form.apellido}
+                  <span className="font-semibold text-black">Nombre:</span>{" "}
+                  {form.nombre} {form.apellido}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Correo:</span> {form.correo}
+                  <span className="font-semibold text-black">Correo:</span>{" "}
+                  {form.correo}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Teléfono:</span> {form.telefono}
+                  <span className="font-semibold text-black">Teléfono:</span>{" "}
+                  {form.telefono}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Servicio:</span> {form.servicio}
+                  <span className="font-semibold text-black">Servicio:</span>{" "}
+                  {form.servicio}
                 </p>
                 <p>
                   <span className="font-semibold text-black">Fecha:</span>{" "}
                   {form.fecha?.toLocaleDateString("es-ES")}
                 </p>
                 <p>
-                  <span className="font-semibold text-black">Hora:</span> {form.hora}
+                  <span className="font-semibold text-black">Hora:</span>{" "}
+                  {form.hora}
+                </p>
+                <p>
+                  <span className="font-semibold text-black">Precio:</span> $
+                  {servicioSeleccionado
+                    ? Number(servicioSeleccionado.precio).toFixed(2)
+                    : "0.00"}
                 </p>
               </div>
             </div>

@@ -2,6 +2,8 @@
 import React from "react";
 import { Inter, Cormorant_Garamond } from "next/font/google";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
 // Configurar las fuentes
 const inter = Inter({
@@ -14,48 +16,52 @@ const cormorantGaramond = Cormorant_Garamond({
   weight: ["400"],
 });
 
-const services = [
-  {
-    id: "corte",
-    nombre: "Corte de cabello + peinado",
-    descripcion: "Transforma tu look con un corte profesional y peinado estilizado.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80",
-  },
-  {
-    id: "manicure",
-    nombre: "Manicure & Pedicure",
-    descripcion: "Uñas impecables y relajación total para tus manos y pies.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80",
-  },
-  {
-    id: "facial",
-    nombre: "Tratamiento facial hidratante",
-    descripcion: "Hidrata y rejuvenece tu piel con nuestro tratamiento facial premium.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80",
-  },
-  {
-    id: "spa",
-    nombre: "Spa relajante con aromaterapia",
-    descripcion: "Relaja tu cuerpo y mente con un spa completo y aromas terapéuticos.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80",
-  },
-  {
-    id: "maquillaje",
-    nombre: "Maquillaje para eventos",
-    descripcion: "Luce radiante en cualquier ocasión con maquillaje profesional.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80",
-  },
-];
+interface Servicio {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  precio: number;
+  duracion: number;
+  imagenUrl: string | null;
+  activo: boolean;
+}
 
 export default function ServicesPage() {
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchServicios() {
+      try {
+        const response = await fetch("/api/servicios");
+
+        if (!response.ok) {
+          throw new Error("Error al cargar servicios");
+        }
+        const data = await response.json();
+        setServicios(data);
+      } catch (err) {
+        console.log("Error", err);
+        setError("No se pudo cargar los servicios");
+        setLoading(true);
+      }
+    }
+    fetchServicios()
+  },[]);
+
   return (
     <div className="min-h-screen">
       <section className="pt-24 pb-8 bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="container mx-auto px-4 text-center">
-          <h1 className={`${inter.className} text-4xl md:text-6xl lg:text-7xl font-black mb-4`}>
+          <h1
+            className={`${inter.className} text-4xl md:text-6xl lg:text-7xl font-black mb-4`}
+          >
             <span>The Beauty LOFT</span>
           </h1>
-          <h2 className={`${cormorantGaramond.className} text-2xl md:text-4xl lg:text-5xl font-normal text-gray-700`}>
+          <h2
+            className={`${cormorantGaramond.className} text-2xl md:text-4xl lg:text-5xl font-normal text-gray-700`}
+          >
             Servicios
           </h2>
         </div>
@@ -63,23 +69,54 @@ export default function ServicesPage() {
 
       <section className="pt-24 pb-8 px-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service) => (
+          {servicios.map((servicio) => (
             <div
-              key={service.id}
+              key={servicio.id}
               className="bg-white rounded-2xl shadow-lg overflow-hidden hover:scale-105 transform transition duration-300"
             >
-              <img
-                src={service.img}
-                alt={service.nombre}
-                className="w-full h-48 object-cover"
-              />
+              <div className="relative w-full h-48 bg-gray-200">
+                {servicio.imagenUrl ? (
+                  <Image
+                    src={servicio.imagenUrl}
+                    alt={servicio.nombre}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-gray-100">
+                    <span className="text-gray-400 text-sm">Sin imagen</span>
+                  </div>
+                )}
+              </div>
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-black mb-2">
-                  {service.nombre}
+                  {servicio.nombre}
                 </h2>
-                <p className="text-gray-700 mb-4">{service.descripcion}</p>
+                <p className="text-gray-700 mb-4">{servicio.descripcion}</p>
+                <div className="flex justify-between items-center mb-4 text-sm text-gray-600">
+                  <span className="font-semibold text-black text-lg">
+                    ${Number(servicio.precio).toFixed(2)}
+                  </span>
+                  <span className="flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {servicio.duracion} min
+                  </span>
+                </div>
                 <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition">
-                  <Link href='/agendarCita'>Reserva</Link>
+                  <Link href="/agendarCita">Reserva</Link>
                 </button>
               </div>
             </div>
@@ -106,17 +143,16 @@ export default function ServicesPage() {
               San Salvador, El Salvador
             </p>
           </div>
-          
+
           {/* Línea separadora opcional */}
           <hr className="border-gray-600 my-8 max-w-md mx-auto" />
-          
+
           {/* Copyright */}
           <p className="text-gray-400 text-sm">
             © 2024 The Beauty LOFT. Todos los derechos reservados.
           </p>
         </div>
       </footer>
-      
-      </div>
-  );
+    </div>
+  );
 }
