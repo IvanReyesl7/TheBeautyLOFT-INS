@@ -76,3 +76,27 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function GET() {
+  try {
+    const citas = await prisma.cita.findMany({
+      include: {
+        cliente: true,
+        servicios: {
+          include: {
+            servicio: true,
+          },
+        },
+      },
+      orderBy: { fechaHora: "desc" },
+    });
+
+    return NextResponse.json(citas);
+  } catch (error) {
+    console.error("Error al obtener citas:", error);
+    return NextResponse.json(
+      { error: "Error interno al obtener citas" },
+      { status: 500 }
+    );
+  }
+}
