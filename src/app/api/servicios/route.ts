@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const servicios = await prisma.servicio.findMany({
-      where: { activo: true }
+      
     })
     return NextResponse.json(servicios)
   } catch (error) {

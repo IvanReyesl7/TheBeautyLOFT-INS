@@ -26,8 +26,6 @@ export default function Dashboard() {
     router.push("/register");
   };
 
-  
-
   // Interfaces
   interface Servicio {
     id: number;
@@ -107,6 +105,36 @@ export default function Dashboard() {
     }
     fetchCitas();
   }, []);
+
+  const handleFinalizarCita = async (citaId: number) => {
+    if (!confirm("¿Estás seguro de que quieres completar esta cita?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/citas/${citaId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ estado: "COMPLETADA" }),
+      });
+
+      if (response.ok) {
+        setCitas(
+          citas.map((cita) =>
+            cita.id === citaId ? { ...cita, estado: "COMPLETADA" } : cita
+          )
+        );
+        alert("Cita finalizada exitosamente");
+      } else {
+        throw new Error("Error al finalizar cita");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al finalizar la cita");
+    }
+  };
 
   const handleCancelarCita = async (citaId: number) => {
     if (!confirm("¿Estás seguro de que quieres cancelar esta cita?")) {
@@ -253,12 +281,10 @@ export default function Dashboard() {
                     {/* Botones de acción */}
                     <div className="grid grid-cols-2 gap-2">
                       <button
-                        onClick={() =>
-                          router.push(`/dashboard/citas/${cita.id}/editar`)
-                        }
+                        onClick={() => handleFinalizarCita(cita.id)}
                         className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm"
                       >
-                        Editar
+                        Completar
                       </button>
                       <button
                         onClick={() => handleCancelarCita(cita.id)}
@@ -305,12 +331,26 @@ export default function Dashboard() {
                     key={servicio.id}
                     className="border-2 border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-all hover:shadow-md"
                   >
-                    <h3 className="text-xl font-semibold text-black mb-2">
-                      {servicio.nombre}
-                    </h3>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-semibold text-black">
+                        {servicio.nombre}
+                      </h3>
+                      {/* Badge de estado */}
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          servicio.activo
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {servicio.activo ? "Activo" : "Inactivo"}
+                      </span>
+                    </div>
+
                     <p className="text-gray-700 mb-4 text-sm">
                       {servicio.descripcion || "Sin descripción"}
                     </p>
+
                     <div className="flex justify-between items-center mb-4">
                       <span className="font-semibold text-black text-lg">
                         ${Number(servicio.precio).toFixed(2)}
@@ -332,8 +372,16 @@ export default function Dashboard() {
                         {servicio.duracion} min
                       </span>
                     </div>
-                    <button className="w-full bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition">
-                      <Link href="/agendarCita">Editar</Link>
+
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/servicios/${servicio.id}/editar`
+                        )
+                      }
+                      className="w-full bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
+                    >
+                      Editar
                     </button>
                   </div>
                 ))
