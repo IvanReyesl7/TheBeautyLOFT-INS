@@ -21,6 +21,13 @@ export default function Dashboard() {
     router.push("/");
   };
 
+  const handleRegister = () => {
+    setUser(null);
+    router.push("/register");
+  };
+
+  
+
   // Interfaces
   interface Servicio {
     id: number;
@@ -101,6 +108,37 @@ export default function Dashboard() {
     fetchCitas();
   }, []);
 
+  const handleCancelarCita = async (citaId: number) => {
+    if (!confirm("¿Estás seguro de que quieres cancelar esta cita?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/citas/${citaId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ estado: "CANCELADA" }),
+      });
+
+      if (response.ok) {
+        // Actualizar citas
+        setCitas(
+          citas.map((cita) =>
+            cita.id === citaId ? { ...cita, estado: "CANCELADA" } : cita
+          )
+        );
+        alert("Cita cancelada exitosamente");
+      } else {
+        throw new Error("Error al cancelar cita");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al cancelar la cita");
+    }
+  };
+
   const citasPendientes = citas.filter((c) => c.estado === "PENDIENTE").length;
   const serviciosActivos = servicios.filter((s) => s.activo).length;
 
@@ -109,6 +147,14 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-black text-white px-6 py-4 flex justify-between items-center shadow-md">
         <h1 className="text-2xl font-bold">The Beauty LOFT</h1>
+        <div className="flex items-center space-x-4">
+          <Button
+            onClick={handleRegister}
+            className="bg-white text-black px-3 py-1 rounded-lg font-semibold hover:bg-gray-700 transition"
+          >
+            Agregar usuario
+          </Button>
+        </div>
         <div className="flex items-center space-x-4">
           <span className="font-medium">{user}</span>
           <Button
@@ -134,52 +180,98 @@ export default function Dashboard() {
           </div>
 
           <ScrollArea className="flex-1 h-[600px]">
-            <div className="p-4">
-              <table className="min-w-full border border-gray-300 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="border border-gray-300 p-2 text-left">Nombre</th>
-                    <th className="border border-gray-300 p-2 text-left">Apellido</th>
-                    <th className="border border-gray-300 p-2 text-left">Email</th>
-                    <th className="border border-gray-300 p-2 text-left">Teléfono</th>
-                    <th className="border border-gray-300 p-2 text-left">Servicio</th>
-                    <th className="border border-gray-300 p-2 text-left">Duración</th>
-                    <th className="border border-gray-300 p-2 text-left">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {citas.length > 0 ? (
-                    citas.map((cita) => (
-                      <tr key={cita.id} className="hover:bg-gray-50">
-                        <td className="border border-gray-300 p-2">{cita.cliente?.nombre}</td>
-                        <td className="border border-gray-300 p-2">{cita.cliente?.apellido}</td>
-                        <td className="border border-gray-300 p-2">{cita.cliente?.email}</td>
-                        <td className="border border-gray-300 p-2">{cita.cliente?.telefono}</td>
-                        <td className="border border-gray-300 p-2">
-                          {cita.servicios?.[0]?.servicio?.nombre || "Sin servicio"}
-                        </td>
-                        <td className="border border-gray-300 p-2">
-                          {cita.servicios?.[0]?.servicio?.duracion || "—"} min
-                        </td>
-                        <td className="border border-gray-300 p-2">
-                          {cita.fechaHora
-                            ? new Date(cita.fechaHora).toLocaleString("es-ES", {
-                                dateStyle: "short",
-                                timeStyle: "short",
-                              })
-                            : "Sin fecha"}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="text-center p-4 text-gray-500">
-                        No hay citas registradas.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="p-4 space-y-4">
+              {citas.length > 0 ? (
+                citas.map((cita) => (
+                  <div
+                    key={cita.id}
+                    className="border-2 border-gray-200 rounded-lg p-4 hover:border-gray-400 transition-all hover:shadow-md"
+                  >
+                    {/* Información del cliente */}
+                    <div className="mb-3">
+                      <h3 className="text-xl font-semibold text-black mb-1">
+                        {cita.cliente.nombre} {cita.cliente.apellido}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {cita.cliente.email}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {cita.cliente.telefono}
+                      </p>
+                    </div>
+
+                    {/* Servicios de la cita */}
+                    <div className="mb-3 bg-gray-50 p-3 rounded">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">
+                        Servicios:
+                      </p>
+                      {cita.servicios.map((servicio) => (
+                        <div
+                          key={servicio.id}
+                          className="flex justify-between text-sm"
+                        >
+                          <span>• {servicio.servicio.nombre}</span>
+                          <span className="font-medium">
+                            ${Number(servicio.servicio.precio).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Fecha y hora */}
+                    <div className="mb-3 text-sm text-gray-600">
+                      <p>
+                        <strong>Fecha:</strong>{" "}
+                        {new Date(cita.fechaHora).toLocaleDateString("es-ES")}
+                      </p>
+                      <p>
+                        <strong>Hora:</strong>{" "}
+                        {new Date(cita.fechaHora).toLocaleTimeString("es-ES", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Estado */}
+                    <div className="mb-3">
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          cita.estado === "PENDIENTE"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : cita.estado === "CONFIRMADA"
+                            ? "bg-green-100 text-green-800"
+                            : cita.estado === "COMPLETADA"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {cita.estado}
+                      </span>
+                    </div>
+
+                    {/* Botones de acción */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() =>
+                          router.push(`/dashboard/citas/${cita.id}/editar`)
+                        }
+                        className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition text-sm"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleCancelarCita(cita.id)}
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-8">No hay citas.</p>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -187,8 +279,22 @@ export default function Dashboard() {
         {/* Tarjeta 2 - Servicios */}
         <div className="bg-white rounded-xl shadow overflow-hidden flex flex-col">
           <div className="p-6 border-b">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Servicios</h2>
-            <p className="text-gray-600">{serviciosActivos} servicios activos.</p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  Servicios
+                </h2>
+                <p className="text-gray-600">
+                  {serviciosActivos} servicios activos.
+                </p>
+              </div>
+              <Button
+                onClick={() => router.push("/servicios/agregar")}
+                className="bg-black text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition"
+              >
+                Agregar servicio
+              </Button>
+            </div>
           </div>
 
           <ScrollArea className="flex-1 h-[600px]">
