@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Dashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<string | null>("Usuario Ejemplo");
+  const [user, setUser] = useState<string | null>("");
 
   useEffect(() => {
     const isAuthenticated = true;
@@ -175,14 +175,6 @@ export default function Dashboard() {
       {/* Header */}
       <header className="bg-black text-white px-6 py-4 flex justify-between items-center shadow-md">
         <h1 className="text-2xl font-bold">The Beauty LOFT</h1>
-        <div className="flex items-center space-x-4">
-          <Button
-            onClick={handleRegister}
-            className="bg-white text-black px-3 py-1 rounded-lg font-semibold hover:bg-gray-700 transition"
-          >
-            Agregar usuario
-          </Button>
-        </div>
         <div className="flex items-center space-x-4">
           <span className="font-medium">{user}</span>
           <Button
@@ -376,7 +368,7 @@ export default function Dashboard() {
                     <button
                       onClick={() =>
                         router.push(
-                          `/dashboard/servicios/${servicio.id}/editar`
+                          `/servicios/${servicio.id}/editar`
                         )
                       }
                       className="w-full bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
