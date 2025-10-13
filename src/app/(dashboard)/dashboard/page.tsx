@@ -376,7 +376,7 @@ export default function Dashboard() {
                     <button
                       onClick={() =>
                         router.push(
-                          `/dashboard/servicios/${servicio.id}/editar`
+                          `/servicios/${servicio.id}/editar`
                         )
                       }
                       className="w-full bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
